@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ethiopia — Documented Atrocities 2020–2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #1B2A4A;
+    --crimson: #8B1A1A;
+    --gold:    #C9A84C;
+    --ash:     #F5F3EF;
+    --ink:     #1A1A1A;
+    --muted:   #6B6560;
+    --panel:   #FAFAF8;
+    --border:  #DDD9D3;
+    --drone:   #C0392B;
+    --massacre:#8B1A1A;
+    --arrest:  #1A5276;
+    --church:  #6E2FA0;
+    --displace:#B7770D;
+    --general: #2E7D32;
+  }
+
+  html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--navy); }
+
+  /* ── HEADER ── */
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: var(--navy);
+    border-bottom: 2px solid var(--gold);
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap;
+  }
+  #header-left { display: flex; flex-direction: column; }
+  #header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(14px, 2.2vw, 20px);
+    font-weight: 700; color: #fff; letter-spacing: 0.01em; line-height: 1.2;
+  }
+  #header .sub {
+    font-size: 11px; color: var(--gold); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-top: 2px; font-weight: 500;
+  }
+
+  /* ── STATS BAR ── */
+  #stats-bar {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px; padding: 4px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: #fff;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .stat-pill .num { font-size: 16px; font-weight: 500; color: var(--gold); line-height: 1; }
+  .stat-pill .lbl { font-size: 9px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  /* ── MAP ── */
+  #map {
+    position: fixed;
+    top: 72px; left: 0; right: 320px; bottom: 0;
+  }
+  /* mobile handled below */
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    position: fixed;
+    top: 72px; right: 0; bottom: 0; width: 320px;
+    background: var(--panel);
+    border-left: 2px solid var(--gold);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+
+  #sidebar-header {
+    padding: 16px;
+    background: var(--navy);
+    color: #fff;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid var(--gold);
+  }
+  #sidebar-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; font-weight: 700; margin-bottom: 10px;
+  }
+
+  /* Legend */
+  .legend { display: flex; flex-direction: column; gap: 5px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: rgba(255,255,255,0.8);
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;
+  }
+
+  /* Filter buttons */
+  #filter-bar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .filter-btn {
+    padding: 4px 10px; border-radius: 20px; border: 1.5px solid var(--border);
+    font-size: 10px; font-weight: 600; cursor: pointer;
+    background: #fff; color: var(--ink); letter-spacing: 0.04em;
+    text-transform: uppercase; transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  /* Year filter */
+  #year-filter {
+    padding: 10px 16px; background: var(--ash);
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 5px; flex-wrap: wrap; align-items: center;
+  }
+  #year-filter span { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+  .year-btn {
+    padding: 3px 8px; border-radius: 3px; border: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; cursor: pointer; background: #fff; color: var(--muted);
+    transition: all 0.12s;
+  }
+  .year-btn.active { background: var(--navy); color: var(--gold); border-color: var(--navy); }
+
+  /* Event list */
+  #event-list { padding: 8px; flex: 1; }
+  .event-card {
+    background: #fff; border-radius: 6px; margin-bottom: 8px;
+    border-left: 4px solid var(--border);
+    padding: 10px 12px; cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.1s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .event-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+  .event-card.selected { box-shadow: 0 4px 16px rgba(27,42,74,0.25); transform: translateY(-1px); }
+  .event-card .date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.04em;
+  }
+  .event-card .location { font-weight: 600; font-size: 12px; color: var(--navy); margin-bottom: 4px; }
+  .event-card .summary { font-size: 11px; color: var(--ink); line-height: 1.45; }
+  .event-card .tag {
+    display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 3px;
+    margin-top: 6px; color: #fff;
+  }
+  .event-card .casualties {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 500; color: var(--crimson);
+    margin-top: 4px;
+  }
+  .no-results { padding: 20px; text-align: center; color: var(--muted); font-size: 12px; font-style: italic; }
+
+  /* ── POPUP ── */
+  .leaflet-popup-content-wrapper {
+    border-radius: 4px; border-top: 4px solid var(--navy);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    max-width: 300px;
+  }
+  .leaflet-popup-content { margin: 12px 16px; font-family: 'Inter', sans-serif; }
+  .popup-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .popup-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 6px; line-height: 1.3; }
+  .popup-type { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #fff; padding: 2px 8px; border-radius: 3px; display: inline-block; margin-bottom: 8px; }
+  .popup-body { font-size: 12px; line-height: 1.55; color: var(--ink); }
+  .popup-casualties { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--crimson); font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .popup-source { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* ── RESULT COUNT ── */
+  #result-count {
+    padding: 6px 16px; background: var(--ash);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ── PULSE ANIMATION for recent attacks ── */
+  @keyframes pulse {
+    0%   { transform: scale(1); opacity: 1; }
+    50%  { transform: scale(1.5); opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .pulse-marker { animation: pulse 2s infinite; }
+
+  /* Scrollbar */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ═══ MOBILE RESPONSIVE FIXES ═══ */
+  @media (max-width: 767px) {
+
+    /* Header: stack vertically, hide stats on very small screens */
+    #header {
+      flex-direction: column;
+      align-items: flex-start;
+      height: auto;
+      padding: 8px 12px;
+      gap: 6px;
+    }
+    #header h1 { font-size: 13px; line-height: 1.3; }
+    #header .sub { font-size: 9px; }
+    #stats-bar {
+      width: 100%;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #stats-bar::-webkit-scrollbar { display: none; }
+    .stat-pill { min-width: 60px; padding: 4px 8px; }
+    .stat-pill .num { font-size: 14px; }
+    .stat-pill .lbl { font-size: 8px; }
+
+    /* Map takes top 55% of screen below header */
+    #map {
+      top: 96px;
+      right: 0;
+      bottom: 45%;
+    }
+
+    /* Sidebar takes bottom 45% */
+    #sidebar {
+      position: fixed;
+      top: auto;
+      left: 0; right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 45%;
+      border-left: none;
+      border-top: 3px solid #C9A84C;
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Sidebar header: compact */
+    #sidebar-header {
+      padding: 8px 12px;
+      flex-shrink: 0;
+    }
+    #sidebar-header h2 { font-size: 12px; margin-bottom: 6px; }
+
+    /* Legend: horizontal scroll */
+    .legend {
+      flex-direction: row;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .legend::-webkit-scrollbar { display: none; }
+    .legend-item { white-space: nowrap; font-size: 10px; }
+
+    /* Filter bar: horizontal scroll, no wrap */
+    #filter-bar {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding: 8px 12px;
+      gap: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    #filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding: 6px 12px;
+      font-size: 10px;
+      min-height: 32px;
+    }
+
+    /* Year bar: horizontal scroll */
+    #year-filter {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding: 6px 12px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    #year-filter::-webkit-scrollbar { display: none; }
+    .year-btn {
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding: 4px 9px;
+      min-height: 28px;
+      font-size: 10px;
+    }
+
+    /* Result count */
+    #result-count { padding: 4px 12px; font-size: 9px; flex-shrink: 0; }
+
+    /* Event list: scrollable */
+    #event-list { overflow-y: auto; flex: 1; padding: 6px; -webkit-overflow-scrolling: touch; }
+
+    /* Event cards: slightly more compact */
+    .event-card { padding: 9px 10px; margin-bottom: 6px; }
+    .event-card .date { font-size: 9px; }
+    .event-card .location { font-size: 11px; }
+    .event-card .summary { font-size: 10px; }
+    .event-card .casualties { font-size: 10px; }
+    .event-card .tag { font-size: 8px; padding: 2px 6px; }
+
+    /* Popup: constrain width on mobile */
+    .leaflet-popup-content-wrapper { max-width: 85vw !important; }
+    .popup-title { font-size: 13px; }
+    .popup-body { font-size: 11px; }
+  }
+
+  /* Very small phones */
+  @media (max-width: 380px) {
+    #map { bottom: 48%; }
+    #sidebar { height: 48%; }
+  }
+
+  /* Tablet portrait */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    #map { right: 280px; }
+    #sidebar { width: 280px; }
+    #header h1 { font-size: 14px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-left">
+    <h1>Ethiopia — Documented Atrocities Against Amhara & Orthodox Christians</h1>
+    <div class="sub">2020–2026 · Sources: ECLJ, IOTA, HRW, Amnesty International, OHCHR, AAA, EHRC · For Congressional Advocacy</div>
+  </div>
+  <div id="stats-bar">
+    <div class="stat-pill"><span class="num" id="stat-total">68</span><span class="lbl">Events</span></div>
+    <div class="stat-pill"><span class="num">217+</span><span class="lbl">Killed Jan–May '26</span></div>
+    <div class="stat-pill"><span class="num">3.4M+</span><span class="lbl">Displaced</span></div>
+    <div class="stat-pill"><span class="num" style="color:#FF6B6B">MAY 2026</span><span class="lbl">ITAR §126.1 Lifted</span></div>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h2>Attack Log</h2>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--drone)"></div>Drone / Aerial Strike</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--massacre)"></div>Massacre / Extrajudicial Killing</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--church)"></div>Church Attack / Religious Persecution</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--arrest)"></div>Mass Arrest / Detention</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--displace)"></div>Forced Displacement</div>
+    </div>
+  </div>
+
+  <div id="filter-bar">
+    <button class="filter-btn active" data-type="all">All</button>
+    <button class="filter-btn" data-type="drone">Drone Strikes</button>
+    <button class="filter-btn" data-type="massacre">Massacres</button>
+    <button class="filter-btn" data-type="church">Church Attacks</button>
+    <button class="filter-btn" data-type="arrest">Mass Arrests</button>
+    <button class="filter-btn" data-type="displacement">Displacement</button>
+  </div>
+
+  <div id="year-filter">
+    <span>Year:</span>
+    <button class="year-btn active" data-year="all">All</button>
+    <button class="year-btn" data-year="2020">2020</button>
+    <button class="year-btn" data-year="2021">2021</button>
+    <button class="year-btn" data-year="2022">2022</button>
+    <button class="year-btn" data-year="2023">2023</button>
+    <button class="year-btn" data-year="2024">2024</button>
+    <button class="year-btn" data-year="2025">2025</button>
+    <button class="year-btn" data-year="2026">2026</button>
+  </div>
+
+  <div id="result-count">Showing all <span id="count-num">68</span> events</div>
+  <div id="event-list"></div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const COLORS = { drone:'#C0392B', massacre:'#8B1A1A', church:'#6E2FA0', arrest:'#1A5276', displacement:'#B7770D' };
+
+const events = [
+  // 2020
+  { id:1, date:'Sep–Oct 2020', year:2020, type:'massacre', lat:11.05, lng:35.5, location:'Metekel Zone, Benishangul-Gumuz', title:'Metekel Massacres — Multiple Waves', casualties:'45+ killed (Sep), 14+ killed (Oct)', summary:'Series of attacks by Gumuz fighters targeting Amhara and Agew communities. Victims shot and burned alive in their homes. Assailants used the term "Qey" (red) to identify fair-skinned Amhara victims. Cannibalism reported in survivor testimonies.', source:'Amnesty International, EHRC' },
+  { id:2, date:'Nov 1, 2020', year:2020, type:'massacre', lat:8.75, lng:35.1, location:'Gawa Qanqa, West Wollega Zone', title:'Gawa Qanqa Village Massacre', casualties:'54+ killed', summary:'OLA-attributed massacre of Amhara civilians. Victims herded into a local school. Attackers showed photos of dismembered bodies to victims before opening fire with automatic rifles. Attack occurred one day after Ethiopian Defense Forces mysteriously withdrew from the area.', source:'Amnesty International, EHRC' },
+  { id:3, date:'Nov 14, 2020', year:2020, type:'massacre', lat:11.1, lng:35.45, location:'Metekel Zone (Bus Attack)', title:'Metekel Bus Massacre', casualties:'34 killed', summary:'Gumuz militiamen killed 34 people from Amhara and Agew communities traveling by bus in Metekel Zone.', source:'EHRC' },
+  { id:4, date:'Dec 22–23, 2020', year:2020, type:'massacre', lat:11.0, lng:35.55, location:'Bulen Woreda, Benishangul-Gumuz', title:'Bulen Massacre', casualties:'222 killed, ~40,000 displaced', summary:'Village surrounded by up to 500 gunmen overnight. Executions carried out with firearms, arrows, and burning of houses while residents slept. Red Cross confirmed 222 fatalities. One of the deadliest single incidents of the conflict.', source:'Sky News/Red Cross, UNOCHA' },
+  { id:5, date:'Jun 29–Aug 2020', year:2020, type:'massacre', lat:7.2, lng:38.6, location:'Shashemene, Oromia', title:'Shashemene Massacres', casualties:'239 estimated', summary:'Following the assassination of Oromo singer Hachalu Hundessa, Qeeroo youth targeted Amhara and Orthodox Christians. Attackers had lists of names, went house to house checking ID cards. Nine-month pregnant woman killed in front of her children for being Orthodox. Police claimed lack of authorization to intervene.', source:'Minority Rights Group, HRW' },
+
+  // 2021
+  { id:6, date:'Jan 12, 2021', year:2021, type:'massacre', lat:11.05, lng:35.5, location:'Metekel Zone', title:'Metekel January Attack', casualties:'82 killed, 22 injured', summary:'Continuation of Metekel massacre series. 82 civilians killed in a single attack. Al Jazeera confirmed the toll via the Ethiopian Human Rights Commission.', source:'Al Jazeera, EHRC' },
+  { id:7, date:'2021', year:2021, type:'church', lat:9.3, lng:41.85, location:'East Arsi Zone, Oromia', title:'Arsi Zone Christian Killings Begin', casualties:'190+ killed total (2021–2026)', summary:'Beginning of sustained, recurring targeted attacks on Orthodox Christians in Arsi Zone\'s predominantly Muslim areas. The ECLJ formally alerted the UNHRC and UN Office on Genocide Prevention regarding genocide risk.', source:'ECLJ, EOTC' },
+  { id:8, date:'2021', year:2021, type:'displacement', lat:9.0, lng:38.7, location:'Sheger City (Addis Ababa periphery)', title:'Sheger City Amhara Evictions Begin', casualties:'Tens of thousands displaced', summary:'Government-orchestrated discriminatory demolitions targeting Amhara homes around Addis Ababa under "Sheger City" urban development project. Mayor explicitly stated goal was to protect "indigenous" (Oromo) residents. EHRC found "features of ethnic discrimination."', source:'AAA, EHRC' },
+
+  // 2022
+  { id:9, date:'May 2022', year:2022, type:'arrest', lat:9.025, lng:38.75, location:'Addis Ababa', title:'Mass Arrest of 4,500 Amhara', casualties:'4,500+ detained', summary:'Ethiopian government reportedly detained over 4,500 ethnic Amhara individuals in a single month. Part of escalating political targeting of Amhara population ahead of the August 2023 state of emergency.', source:'AP News' },
+  { id:10, date:'Jun 18, 2022', year:2022, type:'massacre', lat:8.78, lng:35.0, location:'Tole Kebele, Gimbi Woreda, West Wollega', title:'Gimbi (Tole) Massacre', casualties:'400–554 killed', summary:'One of the deadliest documented massacres. 13 burned alive; in at least 2 cases pregnant women had their wombs cut open with a knife. Lasted 8 hours; government forces did not respond claiming roads were closed. Gunmen: "We are heroes, no one can escape. We will kill you all."', source:'AAA, HRW, Amnesty International' },
+  { id:11, date:'Jul 4, 2022', year:2022, type:'massacre', lat:8.45, lng:34.7, location:'Kellem Wollega Zone', title:'Kellem Wollega Massacre', casualties:'150–308 killed', summary:'OLA attack weeks after Gimbi massacre. BBC confirmed vast majority of deceased were children and women. Eyewitness: "Two-months and three-months old infants were cruelly massacred." Security forces arrived hours after attackers left.', source:'BBC Amharic, AAA' },
+  { id:12, date:'Jul 7, 2023', year:2023, type:'massacre', lat:11.05, lng:35.5, location:'Metekel Zone', title:'Metekel Massacre Continues', casualties:'17 killed', summary:'Continued pattern of Gumuz-attributed massacres against Amhara in Metekel Zone.', source:'@GPEthiopia' },
+  { id:13, date:'Aug 2022', year:2022, type:'massacre', lat:11.6, lng:39.5, location:'Jigjiga, Somali Region', title:'Jigjiga Attack (Anniversary)', casualties:'Referenced 2018 attack: 29 killed', summary:'The 2018 Jigjiga attacks — in which 29 were killed including 7 clergy burned alive, 5 churches destroyed, and thousands displaced — were carried out with government vehicles and fuel under the direction of the regional president. Documented as state-coordinated.', source:'IOTA/EOTC' },
+  { id:14, date:'Jun 2022', year:2022, type:'arrest', lat:11.59, lng:37.39, location:'Gondar, Amhara Region', title:'Gondar Wahhabi Terror Attack & Mass Arrests', casualties:'7 Orthodox killed, 46+ hospitalized', summary:'Pre-planned coordinated attack. One teenager beaten to death in the Saturday market by attackers shouting "Allahu Akbar." Weapons seized including Bren machine guns, sniper rifles, and hand grenades. Fighters coordinated with TPLF, OLF Shene, and Al-Shabaab. Sudanese passport holders among those captured. 120+ terrorist training manuals found at local gymnasium.', source:'IOTA/EOTC Diocese Report' },
+
+  // 2023
+  { id:15, date:'Aug 13, 2023', year:2023, type:'drone', lat:10.68, lng:37.27, location:'Finote Selam, Amhara Region', title:'Finote Selam Drone Strike', casualties:'26 killed, 55 injured', summary:'Government drone strike on civilians. Hospital official confirmed all victims wore "casual civilian clothing or Sunday traditional clothes," indicating they were churchgoers. First major documented drone strike of the Amhara conflict.', source:'AFP/Le Monde, BBC' },
+  { id:16, date:'Aug 2023', year:2023, type:'arrest', lat:11.59, lng:37.39, location:'Amhara Region / Addis Ababa', title:'State of Emergency Mass Arrests', casualties:'~14,000 detained', summary:'Following August 4 state of emergency declaration. Schools repurposed as detention centres. MPs Christian Tadele and Yohannes Buayalew arrested from their homes. Both remain imprisoned as of June 2026 — nearly 3 years — denied medical care after surgery.', source:'APA News, Amnesty International' },
+  { id:17, date:'Sep 8, 2023', year:2023, type:'massacre', lat:11.75, lng:39.8, location:'Majete, Eastern Amhara', title:'Majete Extrajudicial Killings', casualties:'70+ killed', summary:'Ethiopian federal troops conducted house-to-house searches, executing unarmed farmers. A woman witnessed her husband shot dead in front of her: "They shot dead my husband in front of me. Then they said to me to bury him, kicking his dead body as if he was not a human being."', source:'The Guardian' },
+  { id:18, date:'Sep 17, 2023', year:2023, type:'drone', lat:10.55, lng:37.8, location:'Kuarit & Dembecha, West Gojjam', title:'West Gojjam Dual Drone Strikes', casualties:'30 killed (Kuarit) + 18 killed (Dembecha) = 48 total', summary:'Simultaneous strikes on two towns. Eyewitness: "peaceful people travelling in large numbers have been targeted." Kuarit strikes targeted areas distant from any active conflict zones.', source:'Ethiopia Observer, BBC Amharic' },
+  { id:19, date:'Oct 16–19, 2023', year:2023, type:'drone', lat:10.2, lng:38.98, location:'Berehet Woreda, Amhara', title:'Berehet Woreda Drone Strikes', casualties:'35 killed Oct 16 (including 19-month infant); 8 killed Oct 19', summary:'Two drone strikes in three days. Youngest victim: a 19-month-old infant. Victims included families going about daily activities.', source:'Reuters, AAA' },
+  { id:20, date:'Nov 6, 2023', year:2023, type:'drone', lat:11.4, lng:37.9, location:'Amhara Region (Primary School)', title:'Drone Strike on Primary School', casualties:'7 killed including 3 teachers', summary:'Government drone strike targeted a primary school. UN OHCHR spokesperson Seif Magango stated: "Such attacks may amount to arbitrary deprivation of life under international human rights law."', source:'OHCHR' },
+  { id:21, date:'Nov 9, 2023', year:2023, type:'drone', lat:11.3, lng:38.1, location:'Waber Town, Amhara', title:'Bus Station Drone Strike', casualties:'13 killed', summary:'Drone strike on a bus station. Victims were civilians waiting to board a bus. Confirmed by UN OHCHR.', source:'OHCHR' },
+  { id:22, date:'Nov 23–27, 2023', year:2023, type:'church', lat:9.25, lng:41.8, location:'Arsi Zone, Oromia (Shirka District)', title:'Arsi Massacre — 36 Christians Executed', casualties:'36 killed', summary:'36 Orthodox Christians forcibly removed from homes and executed over two days. Victims ranged from a 28-day-old infant to a 70-year-old. VOA testimony: victims targeted due to Christian faith and Amhara names. Church issued formal condemnation.', source:'VOA Amharic, EOTC Patriarchate' },
+  { id:23, date:'Dec 4, 2023', year:2023, type:'church', lat:9.3, lng:41.75, location:'Arsi Zone, Oromia', title:'Second Arsi Attack — 5 More Killed', casualties:'5 killed, 3 homes burned', summary:'Follow-up attack mirroring the November massacre. Victims abducted from homes and executed. Witness reported victims spoke Amharic. OLA blamed by government; group denied involvement.', source:'VOA Amharic, Addis Standard' },
+  { id:24, date:'Dec 28, 2023', year:2023, type:'church', lat:8.88, lng:39.9, location:'Near Metehara, Oromia', title:'Kulubi Pilgrims Attack', casualties:'8 killed, 10 abducted', summary:'Orthodox pilgrims returning from the annual feast of Archangel St. Gabriel at Kulubi were ambushed near Metehara. Attackers "torched vehicles and fired upon us" (Addis Standard witness). A significant pilgrimage route targeted deliberately.', source:'Addis Standard, Orthodoxy Cognate PAGE' },
+  { id:25, date:'Oct 30, 2023', year:2023, type:'massacre', lat:11.2, lng:37.1, location:'Filseta Debre Maryam Church, West Gojjam', title:'12 Orthodox Students Killed Inside Church', casualties:'12 killed', summary:'EHRC confirmed the killing inside Filseta Debre Maryam Church of 12 "Abinet" students — young students of the Ethiopian Orthodox Church. Government forces also executed a wounded man, his mother, his sister, and their Bajaj driver in West Gojjam zone.', source:'EHRC' },
+  { id:26, date:'Nov 24, 2023', year:2023, type:'church', lat:8.5, lng:34.65, location:'Gidami District, Kellem Wollega', title:'9 Evangelical Church Leaders Kidnapped & Killed', casualties:'9 killed', summary:'Nine individuals from the Ethiopian Evangelical Church Mekane Yesus (EECMY) kidnapped during an overnight prayer service and found dead two days later. Religious persecution extended beyond Orthodox Christians.', source:'BBC Afaan Oromoo' },
+
+  // 2024
+  { id:27, date:'Jan 29, 2024', year:2024, type:'massacre', lat:11.24, lng:37.1, location:'Merawi, Amhara Region', title:'Merawi Extrajudicial Executions', casualties:'45–89+ killed', summary:'Federal forces conducted house-to-house executions on the Eve of the Feast of St. Mary. Amnesty International verified 22+ bodies along the main road. "They told him to let our child go — and after he did, they shot him right outside the house." The EU called for an independent investigation.', source:'HRW, Amnesty International, EHRC' },
+  { id:28, date:'Feb 16–17, 2024', year:2024, type:'church', lat:8.92, lng:39.15, location:'Ziquala Monastery, Oromia', title:'4 Ziquala Monastery Clergy Kidnapped & Killed', casualties:'4 clergy killed', summary:'Four clergymen kidnapped: Aba Teklemariam Asrat (head administrator), Kidanemariam Tilahun (secretary), Aba Gebremariam Abebe (priest/teacher), Hailemariam Woldesenbet (monk). Bodies recovered from a forest Feb 17. OLA blamed.', source:'BBC Tigrinya, EOTC Patriarchate' },
+  { id:29, date:'Feb 19, 2024', year:2024, type:'drone', lat:10.05, lng:38.8, location:'Sasit, North Shewa Zone', title:'Drone Strike on Baptism Pilgrims', casualties:'30 killed including 16 family members', summary:'Drone strike on truck carrying 50+ Christian pilgrims returning from a baptism celebration. 30 killed; infant being baptized miraculously survived. Survivors collected dismembered body parts in blankets. "Macabre gathering the remains — hands and legs scattered everywhere."', source:'BBC Amharic, AAA, AOAV' },
+  { id:30, date:'Feb 24, 2024', year:2024, type:'massacre', lat:11.24, lng:37.1, location:'Merawi, Amhara Region', title:'Merawi Second Wave', casualties:'8+ killed', summary:'Second wave of government force executions in Merawi following another clash in the area.', source:'Amnesty International' },
+  { id:31, date:'Sep 28, 2024', year:2024, type:'arrest', lat:11.5, lng:37.4, location:'Amhara Region (Region-wide)', title:'Region-wide Mass Arrests', casualties:'Thousands detained', summary:'ENDF and regional security launch sweeping mass arrests. Thousands transferred to 4 makeshift detention camps: Dangla, Seraba (Chilga), Chorisa (Kombolcha), and Shewa Robit. One camp held 1,610+ detainees with satellite imagery confirming new cell construction. 35 judges, 13 prosecutors, 11 Wollo University academics detained without warrants. Detainees subjected to ruling Prosperity Party "rehabilitation" sessions.', source:'Amnesty International' },
+  { id:32, date:'Oct 11–14, 2024', year:2024, type:'drone', lat:11.1, lng:37.5, location:'Mehal Genet (Gergech), North Gojjam', title:'Mehal Genet Multi-Day Assault', casualties:'100+ killed', summary:'Series of drone, helicopter, and ground assaults. First strike targeted health centre killing a 9-year-old and an on-duty pharmacist. Government forces then conducted house-to-house executions; 15 residents shot dead in a sorghum field. "Unable to reach [Fano] in time, they turned their vengeance on the people."', source:'Ethiopia Observer, BBC Amharic' },
+  { id:33, date:'Nov 5, 2024', year:2024, type:'drone', lat:11.05, lng:36.85, location:'Arge (Zibist), South Achefer Woreda', title:'Arge Market / School / Maternity Drone Strike', casualties:'50+ killed, 64+ wounded', summary:'Drone strike in 3 rounds hitting an open-air market, primary school (13 children killed playing), and maternity ward (5 pregnant women + 2 visitors killed in labour). No household in town unaffected. "There is no child who does not tremble at night." Mass burial with up to 15 bodies per grave; no religious rites due to fear of further strikes.', source:'BBC Amharic, VOA, AAA' },
+
+  // 2025
+  { id:34, date:'Jan 2025', year:2025, type:'massacre', lat:12.05, lng:37.45, location:'Alefa Woreda, Gondar & Kuarit, Gojjam', title:'Twin-Location Executions — 20 Killed in One Day', casualties:'~20 killed', summary:'Government forces executed approximately 20 civilians in a single day across two locations: Alefa woreda of Gondar and Kuarit woreda of Gojjam.', source:'BBC Amharic' },
+  { id:35, date:'Feb 2025', year:2025, type:'drone', lat:10.1, lng:38.9, location:'North Shewa Zone, Amhara', title:'Drone Strike Kills Pregnant Woman & Child', casualties:'3 killed including pregnant woman and her 6-year-old daughter', summary:'Drone strike hit a house, killing a pregnant woman, her 6-year-old daughter, and a young man. Documented in HRW World Report 2026.', source:'HRW World Report 2026' },
+  { id:36, date:'Mar 31, 2025', year:2025, type:'massacre', lat:10.95, lng:36.8, location:'Birakat, North Mecha, West Gojjam', title:'Birakat House-to-House Executions', casualties:'56+ killed', summary:'After clashes, troops moved through the town house by house, dragging residents into streets and shooting them. Bodies left where they fell for hours while soldiers remained in the town. A priest was shot outside his church. Women, children, and elderly among the dead.', source:'The Economist, May 2025' },
+  { id:37, date:'Apr 2025 (Holy Week)', year:2025, type:'drone', lat:10.35, lng:37.55, location:'Gedeb, Enarj Enawga, East Gojjam', title:'Easter Drone Strike — 100+ Killed', casualties:'100+ killed (possibly 120)', summary:'Drone strike on community gathered near primary school repairing its fence. Eyewitness to AFP: "a drone fired on the crowd and pulverized many people in front of my eyes." Vehicle driver transported 70 bodies; believed total could reach 120. "You couldn\'t distinguish individual people. Everything turned black. Easter didn\'t feel like a holiday."', source:'AFP, BBC Amharic, Addis Standard' },
+  { id:38, date:'Aug 14, 2025', year:2025, type:'massacre', lat:11.4, lng:37.9, location:'Amhara Region', title:'Red Cross Aid Worker Killed', casualties:'1 killed', summary:'Red Cross aid worker Ato Honelegn Fentahun abducted with two colleagues by unidentified armed individuals. At his release he was in immediate need of medical intervention and passed away shortly after reaching hospital. IFRC issued formal mourning statement.', source:'IFRC' },
+  { id:39, date:'Oct 24, 2025', year:2025, type:'church', lat:9.28, lng:40.95, location:'Guna & Merti Districts, East Arsi', title:'Arsi October Attack — 17 Christians Killed', casualties:'17 killed, youngest victim 2 years old', summary:'Ambush-style attack on Christians in their homes in the early hours. Most victims buried in communal graves; 5 buried in BalWold church. Zone administrator Ibrahim Kedir denied all attacks to BBC Amharic.', source:'DW Amharic, EOTC' },
+  { id:40, date:'Oct 27–28, 2025', year:2025, type:'church', lat:9.35, lng:41.15, location:'Shirka District, East Arsi', title:'Shirka Attack — 3 Killed, 4 Kidnapped', casualties:'3 killed, 4 hostages', summary:'Victims "forcibly removed from their homes before being executed" (church official, anonymous for safety). Four others captured and taken hostage.', source:'Addis Standard (Amharic)' },
+  { id:41, date:'Oct 28, 2025', year:2025, type:'church', lat:9.2, lng:40.75, location:'Honkolo Wabe District, East Arsi', title:'Honkolo Wabe Attack — 5 Family Members Killed', casualties:'5 killed (same family)', summary:'Five people killed — all members of the same family. Catholic believers also targeted in nearby West Harerge zone around the same period (attack near St. Mary Church).', source:'BBC News Amharic' },
+  { id:42, date:'Nov 4, 2025', year:2025, type:'massacre', lat:9.32, lng:41.05, location:'East Arsi Zone', title:'Farmers Shot Dead at Lunch', casualties:'5 killed, 3 kidnapped', summary:'Five farmers who had fled returned at the urging of government officials to harvest their fields. As they shared lunch after farm work they were shot dead by unknown gunmen. Three more kidnapped, whereabouts unknown.', source:'Orthodoxy Cognate PAGE, EOTC' },
+  { id:43, date:'Nov 22, 2025', year:2025, type:'church', lat:9.35, lng:41.15, location:'Shirka District, East Arsi', title:'November Shirka Attack — 3 Killed', casualties:'3 killed including father and son', summary:'Third attack in Shirka District in under a month. Three killed including a father and his son.', source:'Borkena' },
+  { id:44, date:'Dec 23, 2025', year:2025, type:'massacre', lat:9.05, lng:36.95, location:'Tega Jigi, Gida Ayana, East Wollega', title:'East Wollega Massacre', casualties:'19 killed including 1 monk, 562 properties destroyed', summary:'Village known for hosting Amhara population. Attack occurred 2 days after federal forces left and Oromo special forces entered. 562 properties looted and burned. Eyewitnesses: "The special forces kidnap whoever they please and kill who they want with impunity."', source:'BBC Amharic, EPRP' },
+
+  // 2026
+  { id:45, date:'Jan–May 2026', year:2026, type:'drone', lat:11.5, lng:37.8, location:'Amhara Region (135 Strikes)', title:'135 Aerial Strikes — 217 Civilian Casualties', casualties:'217 killed, hundreds injured across 135 strikes', summary:'AAA documented 25 drone/air strikes in March 2026 alone (27 killed, 36 injured). Week of May 4–10: at least 11 civilians killed in two additional strikes. 2,601 total civilian harms across 110 districts and 21 zonal administrations documented by AAA between January–May 2026. ENDF conducting ongoing aerial campaign against civilian areas.', source:'AAA War Updates (multiple)' },
+  { id:46, date:'Feb 24–26, 2026', year:2026, type:'church', lat:9.35, lng:41.15, location:'Shirka District, East Arsi', title:'February 2026 Shirka Attacks', casualties:'25 killed (21 on Feb 26 + 4 on Feb 24), 8 hospitalized, 8 disappeared', summary:'Bishop of Arsi Diocese wrote urgently to Patriarchate requesting mediation and federal intervention. Pre-dawn assault began at 4 AM Feb 26; one clergyman among 21 killed. 10 Christian homes burned Feb 24. Movement in district extremely limited due to heightened tensions. EOTC Standing Synod issued formal statement March 1, 2026.', source:'EOTC Patriarchate, ECLJ' },
+  { id:47, date:'May 10, 2026', year:2026, type:'arrest', lat:9.025, lng:38.75, location:'Kaliti & Aba Samuel Prisons, Addis Ababa', title:'Political Prisoners Transferred — Beatings & Denial of Medical Care', casualties:'57 long-held detainees transferred', summary:'MPs Christian Tadele and Yohannes Buayalew, arrested August 2023, transferred from Kilinto to Kaliti and Aba Samuel prisons. AAA documented beatings, food and water shortages, denial of medical care, inadequate bedding. A US Senate conference in the Kennedy Caucus Room on May 15 pressed for their release. Neither has been freed as of June 2026 — nearly 3 years after arrest.', source:'AAA, Borkena, Genocide Watch' },
+  { id:48, date:'May 11, 2026', year:2026, type:'displacement', lat:9.025, lng:38.75, location:'Washington D.C. / Ethiopia', title:'ITAR §126.1 LIFTED — No Conditions Attached', casualties:'N/A — Policy reversal enabling future arms sales', summary:'State Department DDTC terminated Ethiopia\'s ITAR §126.1 designation — removing the legal bar on U.S. arms sales to the Abiy regime — on the same day the U.S.-Ethiopia Bilateral Structured Dialogue was signed. No public conditions, no ceasefire requirement, no Leahy Law compliance explanation. The Lemkin Institute\'s Active Genocide Alert was in effect. ECLJ noted the timing with Election Day massacres days away.', source:'DDTC, ECLJ' },
+  { id:49, date:'May 30–Jun 1, 2026', year:2026, type:'massacre', lat:9.28, lng:40.95, location:'East Arsi Zone (Multiple Kebeles)', title:'ELECTION DAY MASSACRES — 40+ Killed', casualties:'40+ killed, 2,650 displaced', summary:'As Ethiopia conducted elections, armed men moved through East Arsi killing Orthodox Christians in 10 kebeles. OLA flag planted. Victims named by East Arsi Diocese: Demrew Abera (70), Kefalegn Likyelew (56), Amare Belayneh (80), Tere Desse (25), Genene & Murtesa Tilahun (cousins), and others confirmed by EHRC. 101-year-old Teleta St. Gabriel Church and Kara Kuftena Medhane Alem Church burned. Health centre attacked and looted. Funerals in mass graves June 2. Patriarch Abune Mathias: "Until when?"', source:'BBC Amharic, Addis Standard, EHRC, EOTC' },
+  { id:50, date:'Jun 2, 2026', year:2026, type:'church', lat:9.025, lng:38.75, location:'Geneva / UN', title:'ECLJ Submits Urgent Letter to UN Genocide Prevention Office', casualties:'N/A — Legal/advocacy action', summary:'The European Centre for Law and Justice submitted an urgent letter to the UN Office on Genocide Prevention alerting it to the grave atrocities being committed against Christians and the Amhara people in Ethiopia, citing the Election Day massacres occurring simultaneously with the ITAR embargo reversal.', source:'ECLJ' },
+
+  // Earlier 2020 events
+  { id:51, date:'Sep 2018', year:2020, type:'church', lat:9.15, lng:38.7, location:'Burayu, near Addis Ababa', title:'Burayu Massacre', casualties:'23 killed', summary:'Oromo youth mobs targeted Amhara and other minorities in Burayu near Addis Ababa. Chanting "leave our land." Police claimed lack of authorization to intervene. First instance of ethnic violence encroaching near the capital.', source:'Reuters' },
+  { id:52, date:'2018–2019', year:2020, type:'church', lat:8.5, lng:39.5, location:'Eastern & Southern Ethiopia', title:'30+ Churches Burned 2018–2019', casualties:'30+ churches attacked, half burned', summary:'Wave of arson attacks on Orthodox churches across Ethiopia, predominantly in eastern and southern regions. Amhara Professionals Union documented over 30 churches attacked, more than half burned to the ground.', source:'APU' },
+
+  // Additional 2023 events
+  { id:53, date:'Jan 2023', year:2023, type:'church', lat:7.2, lng:38.55, location:'Shashemene, Oromia', title:'Oromo Synod Schism — Live Fire on Churchgoers', casualties:'Multiple killed', summary:'State-sponsored breakaway of three Oromo archbishops from EOTC to form a new "Oromo" synod. Oromo special forces intervened in support of the breakaway synod. Law enforcement used live rounds against the assembly at Saint Michael Church in Shashemene on February 4, 2023.', source:'ECLJ, Reuters' },
+  { id:54, date:'2023', year:2023, type:'displacement', lat:8.95, lng:38.6, location:'Sheger City, Oromia (Addis Ababa periphery)', title:'Sheger City Mass Demolitions', casualties:'Tens of thousands displaced', summary:'Government demolition of tens of thousands of Amhara homes around Addis Ababa under "Sheger City" project. Mayor stated goal was to protect "indigenous" (Oromo) residents. EHRC confirmed features of ethnic discrimination. Systematic segregation targeting non-Oromo populations.', source:'AAA, EHRC' },
+
+  // Additional recent events
+  { id:55, date:'Mar 2025', year:2025, type:'drone', lat:10.78, lng:37.35, location:'Amhara Region (March Campaign)', title:'March 2026 Aerial Campaign', casualties:'27 killed, 36 injured (25 strikes in March alone)', summary:'AAA documented 25 drone and air strikes in March 2026 alone, with 27 civilian fatalities and 36 civilian injuries. Part of the 135 total strikes documented between January–May 2026.', source:'AAA' },
+  { id:56, date:'Aug–Oct 2023', year:2023, type:'massacre', lat:11.59, lng:37.4, location:'Bahir Dar, Amhara', title:'Bahir Dar Extrajudicial Executions', casualties:'12+ civilians documented', summary:'Amnesty International documented extrajudicial execution of at least a dozen civilians in Bahir Dar in August and October 2023. A 55-year-old trader, Aynew Defresh, and his two sons Kassahun and Abraham were shot dead walking home from church. "Don\'t leave anyone; shoot all of them" — order heard by witness.', source:'Amnesty International' },
+  { id:57, date:'Oct 2025', year:2025, type:'church', lat:9.1, lng:40.35, location:'West Harerge Zone, Oromia', title:'Catholic Christians Attacked Near St. Mary Church', casualties:'Multiple killed, property burned', summary:'Catholic Bishops\' Conference of Ethiopia reported attack near Saint Mary Church in West Harerge zone in late October 2025. Catholic believers killed and property set on fire. Bishops condemned in "strongest terms." Extended evidence that religious persecution not limited to Orthodox Christians.', source:'Catholic Bishops\' Conference of Ethiopia' },
+  { id:58, date:'Jun 2024–May 2025', year:2024, type:'massacre', lat:11.3, lng:37.9, location:'Amhara Region (Multiple)', title:'EHRC Annual Report: "Systematic Abuses"', casualties:'Dozens of incidents', summary:'EHRC assessment covering June 2024–May 2025 documented dozens of incidents and warned of "a pattern of systematic abuses driven by vengeance, mistrust, and the breakdown of law and order," attributing grave abuses to both government forces and Fano. HRW World Report 2026 confirmed war crimes by warring parties throughout 2025.', source:'EHRC, HRW World Report 2026' },
+  { id:59, date:'Feb 14, 2025', year:2025, type:'arrest', lat:11.15, lng:37.55, location:'Gonji Qolela, North Gojjam', title:'Fano Militants Kidnap 13 Teachers', casualties:'13 teachers held hostage', summary:'Fano militants abducted 13 teachers for violating school closure directives. Families demanded to pay 50,000 birr (€370) per teacher ransom. Note: Fano forces also documented committing serious crimes; Eskinder Nega acknowledged this publicly and called for independent investigation.', source:'Addis Standard' },
+  { id:60, date:'May 15, 2026', year:2026, type:'arrest', lat:38.9, lng:77.0, location:'US Senate, Kennedy Caucus Room', title:'US Senate Conference on Ethiopian Political Prisoners', casualties:'N/A — Advocacy event', summary:'Conference in the Kennedy Caucus Room of the US Senate pressed for the release of Ethiopia\'s political prisoners, naming MP Christian Tadele and historian Tadios Tantu among those still held. Genocide Watch documented the event.', source:'Genocide Watch' },
+];
+
+// ── MAP INIT ─────────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [9.5, 39.5],
+  zoom: 6,
+  zoomControl: true,
+  attributionControl: true,
+  minZoom: 5
+});
+
+// Tile layer — CartoDB dark for gravity
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  subdomains: 'abcd', maxZoom: 19
+}).addTo(map);
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let activeType = 'all';
+let activeYear = 'all';
+let selectedId = null;
+const markers = {};
+
+// ── MARKER CREATOR ────────────────────────────────────────────────────────────
+function makeMarker(ev) {
+  const color = COLORS[ev.type] || '#444';
+  const isRecent = ev.year >= 2025;
+  const size = ev.year >= 2026 ? 18 : ev.year >= 2025 ? 15 : 12;
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${color};
+      border:${isRecent ? '2.5px' : '2px'} solid rgba(255,255,255,0.85);
+      box-shadow:0 0 ${isRecent ? 10 : 5}px ${color}${isRecent ? 'CC' : '55'};
+      ${isRecent ? 'animation:pulse 2s infinite;' : ''}
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -(size/2 + 4)]
+  });
+
+  const marker = L.marker([ev.lat, ev.lng], { icon })
+    .bindPopup(makePopup(ev), { maxWidth: 300, className: '' })
+    .addTo(map);
+
+  marker.on('click', () => {
+    selectedId = ev.id;
+    renderList();
+    scrollToCard(ev.id);
+  });
+
+  return marker;
+}
+
+function makePopup(ev) {
+  const color = COLORS[ev.type] || '#444';
+  const typeLabel = {drone:'Drone Strike',massacre:'Massacre / Extrajudicial Killing',church:'Church Attack / Religious Persecution',arrest:'Mass Arrest / Detention',displacement:'Forced Displacement'}[ev.type] || ev.type;
+  return `
+    <div class="popup-date">${ev.date}</div>
+    <div class="popup-title">${ev.title}</div>
+    <div class="popup-type" style="background:${color}">${typeLabel}</div>
+    <div class="popup-body">${ev.summary}</div>
+    ${ev.casualties ? `<div class="popup-casualties">⚠ ${ev.casualties}</div>` : ''}
+    <div class="popup-source">Source: ${ev.source}</div>
+  `;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function filterEvents() {
+  return events.filter(ev => {
+    const typeMatch = activeType === 'all' || ev.type === activeType;
+    const yearMatch = activeYear === 'all' || String(ev.year) === String(activeYear);
+    return typeMatch && yearMatch;
+  }).sort((a,b) => b.year - a.year || b.date.localeCompare(a.date));
+}
+
+function renderAll() {
+  const filtered = filterEvents();
+  // Clear all markers
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  Object.keys(markers).forEach(k => delete markers[k]);
+  // Add filtered markers
+  filtered.forEach(ev => { markers[ev.id] = makeMarker(ev); });
+  renderList(filtered);
+  document.getElementById('count-num').textContent = filtered.length;
+  document.getElementById('stat-total').textContent = filtered.length;
+}
+
+function renderList(filtered) {
+  filtered = filtered || filterEvents();
+  const list = document.getElementById('event-list');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="no-results">No events match the current filters.</div>';
+    return;
+  }
+  const color = ev => COLORS[ev.type] || '#444';
+  const tag = ev => ({drone:'Drone Strike',massacre:'Massacre',church:'Church Attack',arrest:'Mass Arrest',displacement:'Displacement'}[ev.type] || ev.type);
+  list.innerHTML = filtered.map(ev => `
+    <div class="event-card${ev.id === selectedId ? ' selected' : ''}"
+         id="card-${ev.id}"
+         onclick="selectEvent(${ev.id})"
+         style="border-left-color:${color(ev)}">
+      <div class="date">${ev.date} · ${ev.location}</div>
+      <div class="location">${ev.title}</div>
+      <div class="summary">${ev.summary.length > 120 ? ev.summary.slice(0, 120) + '…' : ev.summary}</div>
+      ${ev.casualties ? `<div class="casualties">⚠ ${ev.casualties}</div>` : ''}
+      <span class="tag" style="background:${color(ev)}">${tag(ev)}</span>
+    </div>
+  `).join('');
+}
+
+function selectEvent(id) {
+  selectedId = id;
+  renderList();
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  map.setView([ev.lat, ev.lng], 9, { animate: true });
+  if (markers[id]) markers[id].openPopup();
+}
+
+function scrollToCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── CONTROLS ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeType = btn.dataset.type;
+    selectedId = null;
+    renderAll();
+  });
+});
+
+document.querySelectorAll('.year-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeYear = btn.dataset.year;
+    selectedId = null;
+    renderAll();
+  });
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderAll();
+
+// Add ITAR marker as a special overlay
+const itarIcon = L.divIcon({
+  className: '',
+  html: `<div style="
+    background:#FF4444;color:#fff;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;font-weight:700;
+    padding:4px 7px;border-radius:3px;
+    border:2px solid #fff;
+    box-shadow:0 0 12px #FF4444AA;
+    white-space:nowrap;
+    animation:pulse 3s infinite;
+  ">ITAR §126.1<br>LIFTED MAY 11, 2026</div>`,
+  iconAnchor: [60, 20]
+});
+L.marker([38.9, -77.0], { icon: itarIcon }).bindPopup('<b>ITAR §126.1 Lifted May 11, 2026</b><br>State Department DDTC terminated Ethiopia\'s arms embargo with no conditions, no Leahy Law compliance explanation, and no ceasefire — on the same day the U.S.-Ethiopia Bilateral Structured Dialogue was signed.').addTo(map);
+
+</script>
+</body>
+</html>
